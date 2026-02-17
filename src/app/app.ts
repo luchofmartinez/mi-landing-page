@@ -5,7 +5,7 @@ import { Projects } from "./components/projects/projects";
 import { Contact } from "./components/contact/contact";
 import { Header } from "./components/header/header";
 import { About } from "./components/about/about";
-import { Footer } from "./components/footer/footer";
+import { Footer } from "./components/footer/footer"; 
 
 @Component({
   selector: 'app-root',
