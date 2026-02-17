@@ -1,5 +1,5 @@
-import { Component, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, HostListener, Inject, PLATFORM_ID, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'app-projects',
@@ -9,6 +9,9 @@ import { CommonModule } from '@angular/common';
 })
 export class Projects {
   currentIndex = signal(0);
+  isMobile = signal(false);
+
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) { }
 
   projects = [
     {
@@ -49,14 +52,48 @@ export class Projects {
     }
   ];
 
+  ngOnInit() {
+    this.checkScreenSize();
+  }
+
+  @HostListener('window:resize', [])
+  onResize() {
+    this.checkScreenSize();
+  }
+
+  private checkScreenSize() {
+    // Solo ejecutamos si estamos en el navegador (client-side)
+    if (isPlatformBrowser(this.platformId)) {
+      this.isMobile.set(window.innerWidth < 1024); // Usamos 1024 para cubrir tablets también
+    }
+  }
+  getTranslation() {
+  if (!isPlatformBrowser(this.platformId)) return 'translateX(0)';
+
+  // Calculamos el porcentaje de desplazamiento según el breakpoint
+  // En mobile desplazamos 100% por vez, en desktop 33.333%
+  const multiplier = this.isMobile() ? 100 : 33.333;
+  
+  // Agregamos un pequeño ajuste si usás gaps (opcional)
+  // Pero con 33.333% y gap-6 en el contenedor suele alinear bien
+  return `translateX(-${this.currentIndex() * multiplier}%)`;
+}
+
   next() {
-    // Como siempre mostramos 3, el máximo índice de desplazamiento es total - 3
-    const maxIndex = this.projects.length - 3;
-    this.currentIndex.update(v => (v < maxIndex ? v + 1 : 0));
+    const itemsToShow = this.isMobile() ? 1 : 3;
+    if (this.currentIndex() < this.projects.length - itemsToShow) {
+      this.currentIndex.update(i => i + 1);
+    } else {
+      this.currentIndex.set(0);
+    }
   }
 
   prev() {
-    const maxIndex = this.projects.length - 3;
-    this.currentIndex.update(v => (v > 0 ? v - 1 : maxIndex));
+    if (this.currentIndex() > 0) {
+      this.currentIndex.update(i => i - 1);
+    } else {
+      const itemsToShow = this.isMobile() ? 1 : 3;
+      this.currentIndex.set(Math.max(0, this.projects.length - itemsToShow));
+    }
   }
 }
